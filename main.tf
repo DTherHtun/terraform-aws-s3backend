@@ -1,18 +1,18 @@
 data "aws_region" "current" {}
- 
+
 resource "random_string" "rand" {
   length  = 24
   special = false
   upper   = false
 }
- 
+
 locals {
   namespace = substr(join("-", [var.namespace, random_string.rand.result]), 0, 24)
 }
- 
+
 resource "aws_resourcegroups_group" "resourcegroups_group" {
   name = "${local.namespace}-group"
- 
+
   resource_query {
     query = <<-JSON
 {
@@ -29,21 +29,21 @@ resource "aws_resourcegroups_group" "resourcegroups_group" {
   JSON
   }
 }
- 
+
 resource "aws_kms_key" "kms_key" {
   tags = {
-    ResourceGroup = local.namespace 
+    ResourceGroup = local.namespace
   }
 }
- 
+
 resource "aws_s3_bucket" "s3_bucket" {
-  bucket = "${local.namespace}-state-bucket"
+  bucket        = "${local.namespace}-state-bucket"
   force_destroy = var.force_destroy_state
-  
+
   versioning {
     enabled = true
   }
- 
+
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
@@ -52,12 +52,12 @@ resource "aws_s3_bucket" "s3_bucket" {
       }
     }
   }
-  
+
   tags = {
-    ResourceGroup = local.namespace 
+    ResourceGroup = local.namespace
   }
 }
- 
+
 resource "aws_dynamodb_table" "dynamodb_table" {
   name         = "${local.namespace}-state-lock"
   hash_key     = "LockID"
@@ -67,6 +67,6 @@ resource "aws_dynamodb_table" "dynamodb_table" {
     type = "S"
   }
   tags = {
-    ResourceGroup = local.namespace 
+    ResourceGroup = local.namespace
   }
 }
